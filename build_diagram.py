@@ -4,8 +4,6 @@ from reportlab.pdfgen import canvas
 from diagram_lib import (Sheet, COL, PW, PH, MARGIN, FONT, FONTB, tint,
                          page_frame, legend)
 
-TOTAL = 6
-
 
 # ---- small inline icons -----------------------------------------------------
 def ic_battery(s, x, y, w, hh):
@@ -26,9 +24,9 @@ def ic_vents(col):
 
 
 # ============================================================ PAGE 1
-def page1(c):
+def page1(c, total):
     s = Sheet(c)
-    page_frame(s, 1, TOTAL, "Visão Geral — Baterias & Cadeia Lynx",
+    page_frame(s, 1, total, "Visão Geral — Baterias & Cadeia Lynx",
                "Power In → BMS NG 500A → Lynx Distributor 1 → Lynx Distributor 2",
                COL["lynx"])
 
@@ -73,7 +71,7 @@ def page1(c):
                     "DVCC · AUX 24V 1.1A"], subtitle="Victron Lynx Smart BMS NG")
     d1 = s.device(xs[2], row_y, mod_w, "lynx", "Lynx Distributor 1",
                   ["4 slots CARREGADORES", "S1 MEGA 300A · S2 100A",
-                   "S3 MEGA 60A · S4 60A"], subtitle="Lado de geração")
+                   "S3 livre · S4 MEGA 60A"], subtitle="Lado de geração")
     d2 = s.device(xs[3], row_y, mod_w, "lynx", "Lynx Distributor 2",
                   ["4 slots CARGAS", "S1 40A · S2 40A", "S3 50A · S4 livre"],
                   subtitle="Lado de consumo")
@@ -106,7 +104,7 @@ def page1(c):
     # DVCC / comms note under BMS
     s.note(xs[1] - 10, 470, 250, "BMS NG — CONTROLE INTEGRADO",
            ["DVCC controla MultiPlus, MPPTs", "e Orion XS via Cerbo GX",
-            "ATD → Battery Protect (Folha 3)", "VE.Can → Cerbo (Folha 6)"],
+            "ATD → Battery Protect (Folha 3)", "VE.Can → Cerbo (Folha 5)"],
            COL["lynx"])
 
     legend(s, PW - MARGIN - 230, PH - MARGIN - 56 - 196,
@@ -122,9 +120,9 @@ def page1(c):
 
 
 # ============================================================ PAGE 2
-def page2(c):
+def page2(c, total):
     s = Sheet(c)
-    page_frame(s, 2, TOTAL, "Lynx Distributor 1 — Carregadores & Alternador",
+    page_frame(s, 2, total, "Lynx Distributor 1 — Carregadores & Alternador",
                "4 slots de geração + circuito do alternador 210A via Orion XS",
                COL["solar"])
 
@@ -166,14 +164,15 @@ def page2(c):
              ["Solar teto 2240 Wp", "VE.Direct → Cerbo GX"],
              subtitle="SmartSolar MPPT", icon=ic_vents("solar"))
 
-    # S3 -> MPPT 100/50 (60A MEGA, 16mm²)
-    s.cable([(busx, slot_y[2]), (colx - 34, slot_y[2])], "16mm²", COL["solar"])
-    s.fuse(colx, slot_y[2], "MEGA 60A", big=True, w=78)
-    s.cable([(colx + 39, slot_y[2]), (devx, slot_y[2])], "16mm²",
-            COL["solar"], tag=False)
-    s.device(devx, slot_y[2] - 34, devw, "solar", "MPPT 100/50",
-             ["Placa flexível", "VE.Direct → Cerbo GX"],
-             subtitle="SmartSolar MPPT", icon=ic_vents("solar"))
+    # S3 -> LIVRE (placa solar flexível removida)
+    s.cable([(busx, slot_y[2]), (colx - 34, slot_y[2])], "", COL["lynx"],
+            tag=False)
+    s.rect(colx - 34, slot_y[2] - 20, 300, 40, fill=COL["panel"],
+           stroke=COL["lynx"], lw=1, r=6, dash=(4, 3))
+    s.text(colx + 116, slot_y[2] - 7, "SLOT 3 — LIVRE (expansão futura)",
+           size=9.5, color=COL["lynx"], font=FONTB, align="c")
+    s.text(colx + 116, slot_y[2] + 7, "reservado p/ novo carregador solar",
+           size=8.5, color=COL["muted"], align="c")
 
     # S4 -> 2x Orion XS (60A MEGA, 16mm² each, inline 30A). Detail is in the
     # alternator band below; here we only show the slot + pointer.
@@ -238,9 +237,9 @@ def page2(c):
 
 
 # ============================================================ PAGE 3
-def page3(c):
+def page3(c, total):
     s = Sheet(c)
-    page_frame(s, 3, TOTAL, "Lynx Distributor 2 — Cargas & Battery Protect",
+    page_frame(s, 3, total, "Lynx Distributor 2 — Cargas & Battery Protect",
                "4 slots de consumo · Battery Protect 100A no Slot 3 (cargas não-DVCC)",
                COL["bp"])
 
@@ -342,9 +341,9 @@ def page3(c):
 
 
 # ============================================================ PAGE 4
-def page4(c):
+def page4(c, total):
     s = Sheet(c)
-    page_frame(s, 4, TOTAL, "Barramento 12V DC",
+    page_frame(s, 4, total, "Barramento 12V DC",
                "Orion 24/12 70A → busbar 12.2V · bitolas, fusíveis e queda de tensão",
                COL["dc12"])
 
@@ -414,9 +413,9 @@ def page4(c):
 
 
 # ============================================================ PAGE 5
-def page5(c):
+def page5(c, total):
     s = Sheet(c)
-    page_frame(s, 5, TOTAL, "Quadro AC 230V & Comunicação / Rede",
+    page_frame(s, 5, total, "Quadro AC 230V & Comunicação / Rede",
                "Saída MultiPlus II 230V · portas Cerbo GX · rede WiFi e BLE",
                COL["multiplus"])
 
@@ -456,7 +455,6 @@ def page5(c):
     ports = [
         ("VE.Bus", "MultiPlus II", "RJ45 UTP", "multiplus"),
         ("VE.Direct 1", "MPPT 150/85", "VE.Direct 5m", "solar"),
-        ("VE.Direct 2", "MPPT 100/50", "VE.Direct 5m", "solar"),
         ("VE.Can", "BMS NG (+term. azul)", "RJ45", "lynx"),
         ("USB 1", "GX Touch 70", "USB incluído", "comm"),
         ("USB 2", "TP-Link UB500 BT", "RuuviTag/Mopeka BLE", "comm"),
@@ -499,9 +497,9 @@ def page5(c):
 
 
 # ============================================================ PAGE 6
-def page6(c):
+def page6(c, total):
     s = Sheet(c)
-    page_frame(s, 6, TOTAL, "Esquema de Ligação Shelly & Iluminação",
+    page_frame(s, 6, total, "Esquema de Ligação Shelly & Iluminação",
                "Shelly 1 (iluminação) e 2x Shelly 1 (motorização) com interruptores",
                COL["dc12"])
 
@@ -580,12 +578,21 @@ def page6(c):
     c.showPage()
 
 
-def main():
-    c = canvas.Canvas("Diagrama_Eletrico_Motorhome_v10.pdf", pagesize=(PW, PH))
+def build(path, pages, total):
+    c = canvas.Canvas(path, pagesize=(PW, PH))
     c.setTitle("Diagrama Elétrico Motorhome v10")
-    page1(c); page2(c); page3(c); page4(c); page5(c); page6(c)
+    for fn in pages:
+        fn(c, total)
     c.save()
-    print("PDF gerado: Diagrama_Eletrico_Motorhome_v10.pdf")
+    print("PDF gerado:", path)
+
+
+def main():
+    full = [page1, page2, page3, page4, page5, page6]
+    # Versão COM a lógica dos Shellys (inclui a Folha 6)
+    build("Diagrama_Eletrico_Motorhome_v10_com_Shelly.pdf", full, 6)
+    # Versão SEM a lógica dos Shellys (sem a Folha 6)
+    build("Diagrama_Eletrico_Motorhome_v10_sem_Shelly.pdf", full[:5], 5)
 
 
 if __name__ == "__main__":
